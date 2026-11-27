@@ -1,38 +1,57 @@
-const fs = require('fs/promises')
-const { Aula } = require('../models/Aula')
+const fs = require("fs/promises")
+const { Aula } = require("../models/Aula")
 
-async function listarAulas() {
+const ARQUIVO = process.env.ARQUIVO_AULAS || "./data/aulas.json"
+
+async function listar() {
   try {
-    const data = await fs.readFile('./data/aulas.json', 'utf-8')
-    const aulas = JSON.parse(data)
-
-    return aulas
-  } catch (error) {
-
-    console.error('Erro ao ler o arquivo de aulas:', error)
+    const conteudo = await fs.readFile(ARQUIVO, "utf-8")
+    return JSON.parse(conteudo)
+  } catch (erro) {
     return []
-
   }
 }
 
-async function salvarAulas(aulas) {
-  try {
-
-    const data = JSON.stringify(aulas, null, 2)
-    await fs.writeFile('./data/aulas.json', data, 'utf-8')
-
-  } catch (error) {
-
-    console.error('Erro ao salvar o arquivo de aulas:', error)
-
-  } 
+async function gravar(aulas) {
+  await fs.writeFile(ARQUIVO, JSON.stringify(aulas, null, 2))
 }
 
-async function adicionarAula(materia, titulo, data, descricao) {
-  const aulas = await listarAulas()
+async function salvar({ materia, titulo, descricao }) {
+  const aulas = await listar()
   const id = aulas.length + 1
+  const data = new Date().toLocaleDateString("pt-BR")
+
   const aula = new Aula(id, materia, titulo, data, descricao)
   aulas.push(aula)
-  await salvarAulas(aulas)
+  await gravar(aulas)
+  return aula
 }
-module.exports = { listarAulas, salvarAulas }
+
+async function atualizar(id, dados) {
+  const aulas = await listar()
+  const indice = aulas.findIndex(a => a.id === id)
+
+  if (indice === -1) {
+    return null
+  }
+
+  const novos = { ...aulas[indice], ...dados }
+
+  aulas[indice] = new Aula(id, novos.materia, novos.titulo, novos.data, novos.descricao)
+  await gravar(aulas)
+  return aulas[indice]
+}
+
+async function remover(id) {
+  const aulas = await listar()
+  const restantes = aulas.filter(a => a.id !== id)
+
+  if (restantes.length === aulas.length) {
+    return false
+  }
+
+  await gravar(restantes)
+  return true
+}
+
+module.exports = { listar, salvar, atualizar, remover }

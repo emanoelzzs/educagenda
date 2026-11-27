@@ -1,6 +1,7 @@
-const app = require('./index.js')
-const port = process.env.PORT || 3000
+const app = require("./index")
 
-app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`)
+const porta = Number(process.env.PORT) || 3000
+
+app.listen(porta, () => {
+  console.log(`Servidor rodando em http://localhost:${porta}`)
 })
